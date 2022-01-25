@@ -33,7 +33,7 @@ class AssignmentView(TemplateView):
 
 class DashboardView(LoginRequiredMixin, ListView):
     model = Project
-    ordering = ('-end_date',)
+    ordering = [F('end_date').desc(nulls_first=True)]
     context_object_name = 'projects'
     template_name = 'projects/dashboard.html'
 
