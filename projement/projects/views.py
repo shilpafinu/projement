@@ -1,9 +1,11 @@
 import os
 import datetime
+import xlwt
 
 from django.db.models import F
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponse
 from django.urls.base import reverse_lazy
 from django.utils.safestring import mark_safe
 from django.views.generic.base import TemplateView
@@ -92,3 +94,33 @@ class ProjectUpdateView(LoginRequiredMixin, UpdateView):
         
         return super().post(request, *args, **kwargs)
 
+def export_project_xls(request):
+    response = HttpResponse(content_type='application/ms-excel')
+    response['Content-Disposition'] = 'attachment; filename="project.xls"'
+
+    wb = xlwt.Workbook(encoding='utf-8')
+    ws = wb.add_sheet('Project')
+
+    # Sheet header, first row
+    row_num = 0
+
+    font_style = xlwt.XFStyle()
+    font_style.font.bold = True
+
+    #columns = ['Project', 'Company', 'Estimated', 'Actual']
+    columns = ['Project', 'Company']
+
+    for col_num in range(len(columns)):
+        ws.write(row_num, col_num, columns[col_num], font_style)
+
+    # Sheet body, remaining rows
+    font_style = xlwt.XFStyle()
+
+    rows = Project.objects.all().values_list('title', 'company',)
+    for row in rows:
+        row_num += 1
+        for col_num in range(len(row)):
+            ws.write(row_num, col_num, row[col_num], font_style)
+
+    wb.save(response)
+    return response
