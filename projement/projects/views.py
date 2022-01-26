@@ -1,4 +1,5 @@
 import os
+import datetime
 
 from django.db.models import F
 from django.conf import settings
@@ -10,9 +11,10 @@ from django.views.generic.edit import UpdateView
 from django.views.generic.list import ListView
 
 from markdown import markdown
+from decimal   import Decimal
 
 from projects.forms import ProjectForm
-from projects.models import Project
+from projects.models import Project, ProjectLog
 
 
 class AssignmentView(TemplateView):
@@ -48,3 +50,45 @@ class ProjectUpdateView(LoginRequiredMixin, UpdateView):
     model = Project
     form_class = ProjectForm
     success_url = reverse_lazy('dashboard')
+
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        project_object = Project.objects.get(id=self.object.id)
+
+        project_details = Project.objects.filter(pk=self.object.id).values()[0]
+        project_form = ProjectForm(request.POST or None, instance=project_object)
+        if project_form.is_valid():
+            form = ProjectForm(request.POST, initial=project_details)
+            if form.has_changed():
+                project_object = project_form.save(commit=False)
+                project_log = ProjectLog()
+                if Decimal(request.POST['actual_design']) != Decimal(project_details['actual_design']):
+                    project_log.initial_actual_design = project_details['actual_design']
+                    project_log.changed_actual_design = request.POST['actual_design']
+                    project_log.total_actual_design = Decimal(project_details['actual_design']) + Decimal(request.POST['actual_design'])
+                    project_object.actual_design = project_log.total_actual_design
+                    project_object.save()
+                
+                if Decimal(request.POST['actual_development']) != Decimal(project_details['actual_development']):
+                    project_log.initial_actual_development = project_details['actual_development']
+                    project_log.changed_actual_development = request.POST['actual_development']
+                    project_log.total_actual_development = Decimal(project_details['actual_development']) + Decimal(request.POST['actual_development'])
+                    project_object.actual_development = project_log.total_actual_development
+                    project_object.save()
+                
+                if Decimal(request.POST['actual_testing']) != Decimal(project_details['actual_testing']):
+                    project_log.initial_actual_testing = project_details['actual_testing']
+                    project_log.changed_actual_testing = request.POST['actual_testing']
+                    project_log.total_actual_testing = Decimal(project_details['actual_testing']) + Decimal(request.POST['actual_testing'])
+                    project_object.actual_testing = project_log.total_actual_testing
+                    project_object.save()
+                
+                project_log.changed_at = datetime.datetime.now()
+                project_log.project = self.object
+                project_log.user = self.request.user
+                project_log.save()
+                
+        
+        return super().post(request, *args, **kwargs)
+

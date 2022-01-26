@@ -3,6 +3,8 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.core.validators import  MinValueValidator
+from django.contrib.auth.models import User
+
 
 from decimal   import Decimal
 
@@ -17,6 +19,30 @@ class Company(models.Model):
 
     def __str__(self):
         return self.name
+
+class ProjectLog(models.Model):
+
+    class Meta:
+        verbose_name_plural = "project_logs"
+
+    project = models.ForeignKey('projects.Project', on_delete=models.PROTECT, related_name='projects')
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name='user')
+
+    initial_actual_design = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    changed_actual_design = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    total_actual_design = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+
+    initial_actual_development = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    changed_actual_development = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    total_actual_development = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+
+    initial_actual_testing = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    changed_actual_testing = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    total_actual_testing = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+
+    changed_at = models.DateTimeField(blank=True, null=True)
+
+
 
 
 class Project(models.Model):
